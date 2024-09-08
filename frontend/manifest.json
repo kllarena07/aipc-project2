@@ -6,5 +6,11 @@
     "permissions": [
         "tabs",
         "activeTab"
+    ],
+    "content_scripts": [
+        {
+            "matches": ["https://www.youtube.com/watch?v=*"],
+            "js": ["content_script.js"]
+        }
     ]
 }
