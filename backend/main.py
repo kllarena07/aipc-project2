@@ -1,6 +1,7 @@
 from flask import Flask, request
 from flask_cors import CORS
 from youtube_transcript_api import YouTubeTranscriptApi
+import base64
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -21,6 +22,23 @@ def receive_string():
     print(output)
 
     return 'Received string.'
+
+@app.route('/upload', methods=['POST'])
+def receive_image():
+    received_data = request.get_json()
+    data_url = received_data.get('dataURL')
+
+    # Extract the base64 image data from the data URL
+    image_data = data_url.split(',')[1]
+
+    # Decode the base64 image data
+    image_bytes = base64.b64decode(image_data)
+
+    # Save the image to disk
+    with open('image.jpg', 'wb') as f:
+        f.write(image_bytes)
+
+    return 'Image saved.'
 
 if __name__ == '__main__':
     app.run()
