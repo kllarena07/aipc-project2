@@ -1,0 +1,10 @@
+{
+    "manifest_version": 3,
+    "name": "Intel Browser Extension",
+    "version": "1.0",
+    "description": "Project for Intel",
+    "permissions": [
+        "tabs",
+        "activeTab"
+    ]
+}
