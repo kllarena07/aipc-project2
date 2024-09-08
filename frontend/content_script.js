@@ -18,7 +18,7 @@ const getScreenshot = (video) => {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const dataURL = canvas.toDataURL('image/png');
+    const dataURL = canvas.toDataURL('image/jpg');
     console.log(dataURL);
 
     fetch('http://127.0.0.1:5000/upload', {
