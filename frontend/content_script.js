@@ -7,4 +7,4 @@ fetch('http://127.0.0.1:5000/post', {
         'Content-Type': 'application/json'
     },
     body: JSON.stringify({url: windowHref})
-});
+}).then(response => console.log(response.json()));
