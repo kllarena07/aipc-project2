@@ -1,5 +1,6 @@
 const windowHref = window.location.href;
 console.log(windowHref);
+let ws = new WebSocket('ws://127.0.0.1:5000/ws');
 
 fetch('http://127.0.0.1:5000/post', {
     method: 'POST',
@@ -80,8 +81,17 @@ const initialize_interface = () => {
     input.addEventListener("keydown", (e) => {
         if(e.key == "Enter") {
             create_message(chat, input.value, false);
-            input.disabled = true;
+            if (ws.OPEN) {
+                ws.send({
+                    url: windowHref,
+                    message: input.value
+                });
+            } else {
+                console.log("Error. Websocket not open.");
+            }
+            // input.disabled = true;
             input.value = '';
+
         }
     });
 
