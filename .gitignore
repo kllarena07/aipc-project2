@@ -1,3 +1,5 @@
 backend/__pycache__
 backend/.env
 frontend/.env
+backend/model_cache
+backend/*.txt
