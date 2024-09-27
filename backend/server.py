@@ -16,7 +16,7 @@ cors = CORS(app)
 PINECONE_API_KEY = getenv('PINECONE_API_KEY')
 dimensions = 512
 index_name = "video-embeddings"
-pc = create_pinecone(api_key=PINECONE_API_KEY, dimensions=dimensions)
+pc = create_pinecone(api_key=PINECONE_API_KEY, index_name=index_name, dimensions=dimensions)
 
 @app.route('/post', methods=['POST'])
 def receive_string():
