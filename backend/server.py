@@ -7,10 +7,13 @@ from dotenv import load_dotenv
 from os import getenv
 from search import vector_search
 from pinecone_init import create_pinecone
+from flask import Flask, render_template
+from flask_sock import Sock
 
 load_dotenv()
 
 app = Flask(__name__)
+sock = Sock(app)
 cors = CORS(app)
 
 PINECONE_API_KEY = getenv('PINECONE_API_KEY')
@@ -50,16 +53,24 @@ def receive_string():
         namespace=video_id
     )
 
-    query = "What is OpenVINO?"
-    search_results = vector_search(pc=pc, index_name=index_name, namespace=video_id, dimensions=dimensions, query=query)
-    print("search results:", search_results)
+    # query = "What is OpenVINO?"
+    # search_results = vector_search(pc=pc, index_name=index_name, namespace=video_id, dimensions=dimensions, query=query)
+    # print("search results:", search_results)
 
-    for result in search_results:
-        print(f'{result['score']} : {result['metadata']['text']}')
-        print('----------')
+    # for result in search_results:
+    #     print(f'{result['score']} : {result['metadata']['text']}')
+    #     print('----------')
 
-    print("Sending response back to client.")
-    return 'Received string.'
+    # print("Sending response back to client.")
+    return 'Finished indexing vectors.'
+
+@sock.route('/ws')
+def websocket(ws):
+    while True:
+        data = ws.receive()  # Receive message from the client
+        if data:
+            print(f"Received: {data}")
+            ws.send(f"Echo: {data}")  # Echo the message back to the client
 
 @app.route('/upload', methods=['POST'])
 def receive_image():
