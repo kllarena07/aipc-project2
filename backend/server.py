@@ -23,7 +23,7 @@ def receive_string():
     received_data = request.get_json()
     url = received_data.get('url')
     video_id = url.replace('https://www.youtube.com/watch?v=', '')
-    
+
     transcript = YouTubeTranscriptApi.get_transcript(video_id)
 
     chunks = []
@@ -47,11 +47,11 @@ def receive_string():
     index = pc.Index(index_name)
     index.upsert(
         vectors=upsert_data,
-        namespace=url
+        namespace=video_id
     )
 
     query = "What is OpenVINO?"
-    search_results = vector_search(pc=pc, index_name=index_name, namespace=url, dimensions=dimensions, query=query)
+    search_results = vector_search(pc=pc, index_name=index_name, namespace=video_id, dimensions=dimensions, query=query)
     print("search results:", search_results)
 
     for result in search_results:
