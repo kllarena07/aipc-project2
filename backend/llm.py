@@ -1,28 +1,16 @@
 def generate_text(model, tokenizer, context, input_text):
-    prompt = f"""
-        You are an LLM that specializes in answering questions with accurate information.
-        If you do not know the answer. Answer with "I do not know."
-        Using the context providede below, generate a response to the following question:
+    prompt = f"With help of the context: {context}\n\nAnswer the question: {input_text}"
 
-        Context:
-        ========================
-        {context}
-        ========================
+    print(prompt)
 
-        Question: {input_text}
-    """
-
-    # print(prompt)
-
+    device = model.device
     inputs = tokenizer(prompt, return_tensors="pt", return_attention_mask=True)
-    input_ids = inputs['input_ids']
-    attention_mask = inputs['attention_mask']
+    input_ids = inputs['input_ids'].to(device)
+    attention_mask = inputs['attention_mask'].to(device)
 
     output = model.generate(input_ids, attention_mask=attention_mask, max_new_tokens=100)
-    # print(output)
-
-    generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-
-    # print(generated_text)
+    generated_sequence = output[0]
+    new_tokens = generated_sequence[input_ids.shape[1]:]
+    generated_text = tokenizer.decode(new_tokens, skip_special_tokens=True)
 
     return generated_text

@@ -33,8 +33,6 @@ let video_interval = setInterval(() => {
     video = document.querySelector('video');
     if (video) {
         clearInterval(video_interval);
-        // video.addEventListener('pause', () => getScreenshot(video));
-        // console.log("Added event listener");
     }
 }, 500);
 
