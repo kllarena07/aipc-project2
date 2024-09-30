@@ -1,38 +1,28 @@
-from optimum.intel import OVModelForCausalLM
-from transformers import AutoTokenizer
-from openvino.runtime import Core
+def generate_text(model, tokenizer, context, input_text):
+    prompt = f"""
+        You are an LLM that specializes in answering questions with accurate information.
+        If you do not know the answer. Answer with "I do not know."
+        Using the context providede below, generate a response to the following question:
 
-# Initialize OpenVINO Core
-core = Core()
-core.set_property({"CACHE_DIR": "./model_cache"})
+        Context:
+        ========================
+        {context}
+        ========================
 
-# Load the model
-model_id = "Gunulhona/openvino-llama-3.1-8B_int8"
-model = OVModelForCausalLM.from_pretrained(
-    model_id,
-    device="GPU",
-    ov_config={"CACHE_DIR": "./model_cache"}
-)
+        Question: {input_text}
+    """
 
-# Load the tokenizer
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+    # print(prompt)
 
-# Set pad token
-tokenizer.pad_token = tokenizer.eos_token
-model.config.pad_token_id = tokenizer.pad_token_id
+    inputs = tokenizer(prompt, return_tensors="pt", return_attention_mask=True)
+    input_ids = inputs['input_ids']
+    attention_mask = inputs['attention_mask']
 
-# Prepare input text
-input_text = "Hello, how are you today?"
+    output = model.generate(input_ids, attention_mask=attention_mask, max_new_tokens=100)
+    # print(output)
 
-# Tokenize input with attention mask
-inputs = tokenizer(input_text, return_tensors="pt", return_attention_mask=True)
-input_ids = inputs['input_ids']
-attention_mask = inputs['attention_mask']
+    generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
 
-# Generate text
-output = model.generate(input_ids, attention_mask=attention_mask, max_length=50)
+    # print(generated_text)
 
-# Decode the output
-generated_text = tokenizer.decode(output[0], skip_special_tokens=True)
-
-print(generated_text)
+    return generated_text

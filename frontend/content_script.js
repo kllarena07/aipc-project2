@@ -57,11 +57,12 @@ const create_message = (chat, message, is_user=true) => {
 const initialize_interface = () => {
     const interface = document.createElement('section');
     interface.style.width = "100%";
-    interface.style.height = video.style.height;
+    interface.style.height = "572px";
     interface.style.boxSizing = "border-box";
     interface.style.backgroundColor = "white";
 
     const chat = document.createElement('section');
+    chat.id = "chat";
     chat.style.width = "calc(100% - 30px)";
     chat.style.height = "calc(100% - 65px)";
     chat.style.paddingTop = "15px";
@@ -80,16 +81,16 @@ const initialize_interface = () => {
     input.style.height = "50px";
     input.addEventListener("keydown", (e) => {
         if(e.key == "Enter") {
-            create_message(chat, input.value, false);
+            create_message(chat, input.value);
             if (ws.OPEN) {
-                ws.send({
+                ws.send(JSON.stringify({
                     url: windowHref,
                     message: input.value
-                });
+                }));
             } else {
                 console.log("Error. Websocket not open.");
             }
-            // input.disabled = true;
+            input.disabled = true;
             input.value = '';
 
         }
@@ -99,6 +100,17 @@ const initialize_interface = () => {
 
     items.insertBefore(interface, items.firstChild);
 }
+
+ws.addEventListener("message", (evt) => {
+    const { data } = evt;
+    console.log(data);
+
+    const chat = document.querySelector('#chat');
+    create_message(chat, data, false);
+
+    const chat_input = document.querySelector('#chat-input');
+    chat_input.disabled = false;
+});
 
 let items;
 let interface_interval = setInterval(() => {

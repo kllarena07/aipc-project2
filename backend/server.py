@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_sock import Sock
 from flask_cors import CORS
 from youtube_transcript_api import YouTubeTranscriptApi
 import base64
@@ -7,8 +8,11 @@ from dotenv import load_dotenv
 from os import getenv
 from search import vector_search
 from pinecone_init import create_pinecone
-from flask import Flask, render_template
-from flask_sock import Sock
+import json
+from llm import generate_text
+from optimum.intel import OVModelForCausalLM
+from transformers import AutoTokenizer
+from openvino.runtime import Core
 
 load_dotenv()
 
@@ -20,6 +24,22 @@ PINECONE_API_KEY = getenv('PINECONE_API_KEY')
 dimensions = 512
 index_name = "video-embeddings"
 pc = create_pinecone(api_key=PINECONE_API_KEY, index_name=index_name, dimensions=dimensions)
+
+
+core = Core()
+core.set_property({"CACHE_DIR": "./model_cache"})
+
+model_id = "Gunulhona/openvino-llama-3.1-8B_int8"
+model = OVModelForCausalLM.from_pretrained(
+    model_id,
+    device="GPU",
+    ov_config={"CACHE_DIR": "./model_cache"}
+)
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+tokenizer.pad_token = tokenizer.eos_token
+model.config.pad_token_id = tokenizer.pad_token_id
 
 @app.route('/post', methods=['POST'])
 def receive_string():
@@ -61,7 +81,7 @@ def receive_string():
     #     print(f'{result['score']} : {result['metadata']['text']}')
     #     print('----------')
 
-    # print("Sending response back to client.")
+    print("Finished indexing vectors.")
     return 'Finished indexing vectors.'
 
 @sock.route('/ws')
@@ -69,8 +89,30 @@ def websocket(ws):
     while True:
         data = ws.receive()  # Receive message from the client
         if data:
-            print(f"Received: {data}")
-            ws.send(f"Echo: {data}")  # Echo the message back to the client
+            print(data)
+            parsed_data = json.loads(data)
+            url= parsed_data['url']
+            video_id = url.replace('https://www.youtube.com/watch?v=', '')
+            message = parsed_data['message']
+
+            print(f"Received URL: {url}")
+            print(f"Received Message: {message}")
+
+            search_results = vector_search(pc=pc, index_name=index_name, namespace=video_id, dimensions=dimensions, query=message)
+
+            relevant_context = ''
+
+            if len(search_results) > 0:
+                    for result in search_results:
+                        print(f'{result['score']} : {result['metadata']['text']}')
+                        print('----------')
+                        relevant_context += f'{result["metadata"]["text"]} \n'
+            else:
+                print("No search results found.")
+
+            llm_answer = generate_text(model=model, tokenizer=tokenizer, context=relevant_context, input_text=message)
+
+            ws.send(f"{llm_answer}")
 
 @app.route('/upload', methods=['POST'])
 def receive_image():
@@ -83,11 +125,11 @@ def receive_image():
     # Decode the base64 image data
     image_bytes = base64.b64decode(image_data)
 
-    # Save the image to disk
-    with open('image.jpg', 'wb') as f:
-        f.write(image_bytes)
+    # # Save the image to disk
+    # with open('image.jpg', 'wb') as f:
+    #     f.write(image_bytes)
 
     return 'Image saved.'
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
